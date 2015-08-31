@@ -715,6 +715,12 @@ function! unite#view#_set_cursor_line() abort "{{{
   if line('.') != prompt_linenr
     call unite#view#_match_line(context.cursor_line_highlight,
           \ line('.'), unite.match_id)
+  else
+    if exists('*matchaddpos')
+      call matchaddpos(context.cursor_line_highlight, [2], 10, unite.match_id)
+    else
+      call matchadd(context.cursor_line_highlight, '^\%2l.*', 10, unite.match_id)
+    endif
   endif
   let unite.cursor_line_time = reltime()
 endfunction"}}}
@@ -730,6 +736,9 @@ endfunction"}}}
 function! unite#view#_clear_match() abort "{{{
   if &filetype ==# 'unite'
     setlocal nocursorline
+
+    let unite = unite#get_current_unite()
+    silent! call matchdelete(unite.match_id)
   endif
 endfunction"}}}
 
@@ -1020,7 +1029,8 @@ function! unite#view#_convert_lines(candidates) abort "{{{
         \ . (unite.max_source_name == 0 ? ''
         \   : unite#util#truncate(unite#helper#convert_source_name(
         \     (v:val.is_dummy ? '' : v:val.source)), max_source_name))
-        \ . ((strwidth(v:val.unite__abbr) < max_width || !context.truncate) ?
+        \ . ((strwidth(v:val.unite__abbr) < max_width && v:key != 0 ||
+        \     strwidth(v:val.unite__abbr) >= max_width && !context.truncate) ?
         \     v:val.unite__abbr
         \   : unite#util#truncate_wrap(v:val.unite__abbr, max_width
         \    , truncate_width, '..'))")
